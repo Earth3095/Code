@@ -1,0 +1,358 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Text.RegularExpressions;
+
+[System.Serializable]
+public class MathProblem
+{
+    public string question;
+    public int correctAnswer;
+    public string solution;
+    public int difficulty; // 1-3 (ม.1-ม.3)
+    public string topic;
+}
+
+[System.Serializable]
+public class PlayerProgress
+{
+    public int totalProblemsAttempted;
+    public int correctAnswers;
+    public int mathKnowledgeLevel; // 0-100%
+    public int accuracyPercentage;
+    public Dictionary<string, int> topicMastery;
+}
+
+public class MathAI : MonoBehaviour
+{
+    [Header("AI Configuration")]
+    public bool isGeneratingProblem = false;
+    public string currentStatus = "พร้อมสร้างโจทย์";
+    
+    [Header("Player Progress")]
+    public PlayerProgress playerProgress;
+    
+    [Header("Problem Settings")]
+    private string[] allowedTopics = { "ตัวแปร", "จำนวนเต็ม", "สมการเชิงเส้น", "การแก้สมการ" };
+    private List<string> forbiddenKeywords = new List<string> 
+    { 
+        "เศษส่วน", "ทศนิยม", "เรขาคณิต", "ความน่าจะเป็น", 
+        "ตรีโกณมิติ", "ลอการิทึม", "อนุพันธ์", "อินทิกรัล",
+        "เวกเตอร์", "เมทริกซ์", "ฟังก์ชัน", "กราฟ"
+    };
+    
+    private System.Random random;
+    
+    void Start()
+    {
+        random = new System.Random();
+        InitializePlayerProgress();
+    }
+    
+    void InitializePlayerProgress()
+    {
+        playerProgress = new PlayerProgress();
+        playerProgress.totalProblemsAttempted = 0;
+        playerProgress.correctAnswers = 0;
+        playerProgress.mathKnowledgeLevel = 0;
+        playerProgress.accuracyPercentage = 0;
+        playerProgress.topicMastery = new Dictionary<string, int>();
+        
+        foreach(string topic in allowedTopics)
+        {
+            playerProgress.topicMastery[topic] = 0;
+        }
+    }
+    
+    public MathProblem GenerateMathProblem()
+    {
+        StartCoroutine(GeneratingProblemCoroutine());
+        
+        int difficulty = UnityEngine.Random.Range(1, 4); // ม.1-ม.3
+        MathProblem problem = new MathProblem();
+        problem.difficulty = difficulty;
+        
+        switch(difficulty)
+        {
+            case 1: // ม.1
+                problem = GenerateGrade7Problem();
+                break;
+            case 2: // ม.2
+                problem = GenerateGrade8Problem();
+                break;
+            case 3: // ม.3
+                problem = GenerateGrade9Problem();
+                break;
+        }
+        
+        // ตรวจสอบว่าโจทย์อยู่ในหัวข้อที่อนุญาต
+        if (!IsValidProblem(problem.question))
+        {
+            // แก้สมการและลบข้อมูลทันที
+            SolveAndDeleteInvalidProblem(problem);
+            return GenerateMathProblem(); // สร้างใหม่
+        }
+        
+        return problem;
+    }
+    
+    private MathProblem GenerateGrade7Problem()
+    {
+        MathProblem problem = new MathProblem();
+        problem.topic = "ตัวแปรและจำนวนเต็ม";
+        problem.difficulty = 1;
+        
+        int problemType = random.Next(1, 5);
+        
+        switch(problemType)
+        {
+            case 1: // การบวกลบจำนวนเต็ม
+                int a = random.Next(-20, 21);
+                int b = random.Next(-20, 21);
+                problem.question = $"จงหาค่าของ {a} + ({b})";
+                problem.correctAnswer = a + b;
+                problem.solution = $"{a} + ({b}) = {problem.correctAnswer}";
+                break;
+                
+            case 2: // การคูณหารจำนวนเต็ม
+                int c = random.Next(-10, 11);
+                int d = random.Next(1, 11);
+                if(c == 0) c = 1;
+                problem.question = $"จงหาค่าของ {c} × {d}";
+                problem.correctAnswer = c * d;
+                problem.solution = $"{c} × {d} = {problem.correctAnswer}";
+                break;
+                
+            case 3: // ค่าของตัวแปร
+                int x = random.Next(1, 21);
+                int coefficient = random.Next(2, 6);
+                problem.question = $"ถ้า x = {x} จงหาค่าของ {coefficient}x";
+                problem.correctAnswer = coefficient * x;
+                problem.solution = $"แทนค่า x = {x} ได้ {coefficient} × {x} = {problem.correctAnswer}";
+                break;
+                
+            case 4: // สมการเชิงเส้นง่าย
+                int answer = random.Next(1, 16);
+                int constant = random.Next(1, 21);
+                problem.question = $"จงหาค่า x ในสมการ x + {constant} = {answer + constant}";
+                problem.correctAnswer = answer;
+                problem.solution = $"x + {constant} = {answer + constant}\nx = {answer + constant} - {constant}\nx = {answer}";
+                break;
+        }
+        
+        return problem;
+    }
+    
+    private MathProblem GenerateGrade8Problem()
+    {
+        MathProblem problem = new MathProblem();
+        problem.topic = "สมการเชิงเส้น";
+        problem.difficulty = 2;
+        
+        int problemType = random.Next(1, 4);
+        
+        switch(problemType)
+        {
+            case 1: // สมการแบบ ax + b = c
+                int a = random.Next(2, 8);
+                int x = random.Next(1, 11);
+                int b = random.Next(-15, 16);
+                int c = a * x + b;
+                problem.question = $"จงหาค่า x ในสมการ {a}x + ({b}) = {c}";
+                problem.correctAnswer = x;
+                problem.solution = $"{a}x + ({b}) = {c}\n{a}x = {c} - ({b})\n{a}x = {c - b}\nx = {(c - b)}/{a}\nx = {x}";
+                break;
+                
+            case 2: // สมการแบบ ax - b = c
+                int a2 = random.Next(3, 7);
+                int x2 = random.Next(2, 12);
+                int b2 = random.Next(1, 21);
+                int c2 = a2 * x2 - b2;
+                problem.question = $"จงหาค่า x ในสมการ {a2}x - {b2} = {c2}";
+                problem.correctAnswer = x2;
+                problem.solution = $"{a2}x - {b2} = {c2}\n{a2}x = {c2} + {b2}\n{a2}x = {c2 + b2}\nx = {(c2 + b2)}/{a2}\nx = {x2}";
+                break;
+                
+            case 3: // การใช้ตัวแปรในปัญหาคำ
+                int totalMarks = random.Next(80, 101);
+                int mathMarks = random.Next(40, totalMarks - 20);
+                int scienceMarks = totalMarks - mathMarks;
+                problem.question = $"นักเรียนคนหนึ่งสอบคณิตศาสตร์และวิทยาศาสตร์รวมได้ {totalMarks} คะแนน ถ้าได้คะแนนคณิตศาสตร์ {mathMarks} คะแนน จงหาคะแนนวิทยาศาสตร์ (ให้ x แทนคะแนนวิทยาศาสตร์)";
+                problem.correctAnswer = scienceMarks;
+                problem.solution = $"ให้ x = คะแนนวิทยาศาสตร์\nคณิต + วิทย์ = {totalMarks}\n{mathMarks} + x = {totalMarks}\nx = {totalMarks} - {mathMarks}\nx = {scienceMarks}";
+                break;
+        }
+        
+        return problem;
+    }
+    
+    private MathProblem GenerateGrade9Problem()
+    {
+        MathProblem problem = new MathProblem();
+        problem.topic = "สมการเชิงเส้นขั้นสูง";
+        problem.difficulty = 3;
+        
+        int problemType = random.Next(1, 4);
+        
+        switch(problemType)
+        {
+            case 1: // สมการแบบ a(x + b) = c
+                int a = random.Next(2, 6);
+                int b = random.Next(-8, 9);
+                int x = random.Next(1, 11);
+                int c = a * (x + b);
+                problem.question = $"จงหาค่า x ในสมการ {a}(x + ({b})) = {c}";
+                problem.correctAnswer = x;
+                problem.solution = $"{a}(x + ({b})) = {c}\nx + ({b}) = {c}/{a}\nx + ({b}) = {c/a}\nx = {c/a} - ({b})\nx = {c/a - b}";
+                break;
+                
+            case 2: // สมการแบบ ax + b = cx + d
+                int x2 = random.Next(2, 10);
+                int a2 = random.Next(3, 8);
+                int c2 = random.Next(1, a2);
+                int b2 = random.Next(-15, 16);
+                int d2 = a2 * x2 + b2 - c2 * x2;
+                problem.question = $"จงหาค่า x ในสมการ {a2}x + ({b2}) = {c2}x + {d2}";
+                problem.correctAnswer = x2;
+                problem.solution = $"{a2}x + ({b2}) = {c2}x + {d2}\n{a2}x - {c2}x = {d2} - ({b2})\n{a2 - c2}x = {d2 - b2}\nx = {(d2 - b2)}/{(a2 - c2)}\nx = {x2}";
+                break;
+                
+            case 3: // ปัญหาคำซับซ้อน
+                int total = random.Next(50, 101);
+                int first = random.Next(10, total - 10);
+                int second = total - first;
+                problem.question = $"จำนวนสองจำนวนรวมกันได้ {total} จำนวนแรกมากกว่าจำนวนที่สองอยู่ {first - second} หน่วย จงหาจำนวนที่สอง (ให้ x แทนจำนวนที่สอง)";
+                problem.correctAnswer = second;
+                problem.solution = $"ให้ x = จำนวนที่สอง\nจำนวนแรก = x + {first - second}\nx + (x + {first - second}) = {total}\n2x + {first - second} = {total}\n2x = {total} - {first - second}\n2x = {2 * second}\nx = {second}";
+                break;
+        }
+        
+        return problem;
+    }
+    
+    private bool IsValidProblem(string question)
+    {
+        // ตรวจสอบคำที่ห้าม
+        foreach(string forbidden in forbiddenKeywords)
+        {
+            if(question.Contains(forbidden))
+            {
+                return false;
+            }
+        }
+        
+        // ต้องมีเนื้อหาเกี่ยวกับตัวแปรหรือจำนวนเต็ม
+        return question.Contains("x") || 
+               question.Contains("จำนวนเต็ม") || 
+               question.Contains("สมการ") ||
+               Regex.IsMatch(question, @"-?\d+");
+    }
+    
+    private void SolveAndDeleteInvalidProblem(MathProblem invalidProblem)
+    {
+        // แก้สมการทันที (ถ้าเป็นสมการ)
+        Debug.Log($"[AI AUTO-SOLVE] โจทย์ไม่ถูกต้อง: {invalidProblem.question}");
+        Debug.Log($"[AI AUTO-SOLVE] คำตอบ: {invalidProblem.correctAnswer}");
+        Debug.Log($"[AI AUTO-SOLVE] ลบข้อมูลการสร้างโจทย์นอกเรื่อง...");
+        
+        // ลบข้อมูลและรีเซ็ตการสร้างโจทย์
+        invalidProblem = null;
+        System.GC.Collect();
+        
+        Debug.Log("[AI] ระบบได้แก้ไขและลบข้อมูลที่ผิดแล้ว");
+    }
+    
+    public void SubmitAnswer(int playerAnswer, MathProblem problem)
+    {
+        playerProgress.totalProblemsAttempted++;
+        
+        if(playerAnswer == problem.correctAnswer)
+        {
+            playerProgress.correctAnswers++;
+            playerProgress.topicMastery[problem.topic]++;
+            Debug.Log("ถูกต้อง! 🎉");
+        }
+        else
+        {
+            Debug.Log($"ผิด! คำตอบที่ถูกต้องคือ {problem.correctAnswer}");
+            Debug.Log($"วิธีทำ:\n{problem.solution}");
+        }
+        
+        UpdateProgress();
+    }
+    
+    private void UpdateProgress()
+    {
+        // คำนวณความแม่นยำ
+        if(playerProgress.totalProblemsAttempted > 0)
+        {
+            playerProgress.accuracyPercentage = 
+                (playerProgress.correctAnswers * 100) / playerProgress.totalProblemsAttempted;
+        }
+        
+        // คำนวณระดับความรู้
+        int totalMastery = 0;
+        foreach(var mastery in playerProgress.topicMastery.Values)
+        {
+            totalMastery += mastery;
+        }
+        
+        // ความรู้เพิ่มขึ้นตามจำนวนข้อที่ทำถูก
+        playerProgress.mathKnowledgeLevel = Mathf.Min(100, totalMastery * 5);
+        
+        DisplayProgress();
+    }
+    
+    public void DisplayProgress()
+    {
+        Debug.Log("=== ความก้าวหน้าของนักเรียน ===");
+        Debug.Log($"ความรู้ทางคณิตศาสตร์: {playerProgress.mathKnowledgeLevel}%");
+        Debug.Log($"ความถูกต้อง: {playerProgress.accuracyPercentage}%");
+        Debug.Log($"ทำโจทย์ไปแล้ว: {playerProgress.totalProblemsAttempted} ข้อ");
+        Debug.Log($"ตอบถูก: {playerProgress.correctAnswers} ข้อ");
+        
+        Debug.Log("\n--- ความเชี่ยวชาญในแต่ละเรื่อง ---");
+        foreach(var topic in playerProgress.topicMastery)
+        {
+            int masteryLevel = Mathf.Min(100, topic.Value * 10);
+            Debug.Log($"{topic.Key}: {masteryLevel}%");
+        }
+    }
+    
+    private System.Collections.IEnumerator GeneratingProblemCoroutine()
+    {
+        isGeneratingProblem = true;
+        currentStatus = "กำลังคิดโจทย์คำถาม...";
+        yield return new WaitForSeconds(1f);
+        
+        currentStatus = "กำลังตรวจสอบความถูกต้อง...";
+        yield return new WaitForSeconds(0.5f);
+        
+        currentStatus = "สร้างโจทย์เสร็จแล้ว!";
+        yield return new WaitForSeconds(0.5f);
+        
+        isGeneratingProblem = false;
+        currentStatus = "พร้อมสร้างโจทย์";
+    }
+    
+    void OnGUI()
+    {
+        GUILayout.BeginArea(new Rect(10, 10, 300, 200));
+        
+        GUILayout.Label($"สถานะ AI: {currentStatus}");
+        
+        if(!isGeneratingProblem && GUILayout.Button("สร้างโจทย์ใหม่"))
+        {
+            MathProblem newProblem = GenerateMathProblem();
+            Debug.Log($"โจทย์: {newProblem.question}");
+            Debug.Log($"ระดับ: ม.{newProblem.difficulty}");
+        }
+        
+        GUILayout.Space(10);
+        GUILayout.Label("ความก้าวหน้า:");
+        GUILayout.Label($"ความรู้: {playerProgress.mathKnowledgeLevel}%");
+        GUILayout.Label($"ความแม่นยำ: {playerProgress.accuracyPercentage}%");
+        
+        GUILayout.EndArea();
+    }
+}
