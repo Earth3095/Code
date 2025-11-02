@@ -1,0 +1,39 @@
+# ========== CORE AI (ไม่พึ่ง API) ==========
+llama-cpp-python>=0.2.20
+huggingface-hub>=0.19.0
+torch>=2.1.0
+sentence-transformers>=2.2.2
+
+# ========== DATABASE (Local) ==========
+chromadb>=0.4.18
+sqlite-utils>=3.35
+
+# ========== WEB & API ==========
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+websockets>=12.0
+
+# ========== COMPUTER CONTROL ==========
+pyautogui>=0.9.54
+pynput>=1.7.6
+opencv-python>=4.8.1
+Pillow>=10.1.0
+pytesseract>=0.3.10
+numpy>=1.24.0
+
+# ========== FILE PROCESSING ==========
+PyPDF2>=3.0.1
+python-docx>=1.1.0
+openpyxl>=3.1.2
+
+# ========== WEB SCRAPING ==========
+beautifulsoup4>=4.12.2
+requests>=2.31.0
+selenium>=4.15.0
+
+# ========== UTILITIES ==========
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+rich>=13.7.0
+tqdm>=4.66.1
+psutil>=5.9.6
