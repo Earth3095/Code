@@ -10757,3 +10757,666 @@ _G.PlayerDataManager = {
 
 print("✅✅✅ [MASTER SERVER] พร้อมใช้งานครบทุกระบบ!")
 จะทำต่อด้วย MasterClient (GUI ทั้งหมด) และไฟล์อื่นๆ ครับ...
+my: ต่อ
+ai: 🚀 ต่อ - MasterClient (GUI ทั้งหมด 800+ บรรทัด)
+MasterClient - รวม GUI ทุกอย่าง:
+lua-- ใส่ใน: StarterPlayer > StarterPlayerScripts > LocalScript ชื่อ "MasterClient"
+-- 🎮 GUI ทั้งหมดในไฟล์เดียว! รวมทุกระบบ Client
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+print("🎨 [MASTER CLIENT] กำลังโหลด...")
+
+-- โหลด Config
+wait(2)
+local GameConfig = require(ReplicatedStorage:WaitForChild("GameConfig"))
+
+-- รอ RemoteEvents
+local UpdatePlayerStats = ReplicatedStorage.RemoteEvents:WaitForChild("UpdatePlayerStats")
+local AttackMonster = ReplicatedStorage.RemoteEvents:WaitForChild("AttackMonster")
+local CollectItem = ReplicatedStorage.RemoteEvents:WaitForChild("CollectItem")
+local AdminCommand = ReplicatedStorage.RemoteEvents:WaitForChild("AdminCommand")
+local ShowMathQuiz = ReplicatedStorage.RemoteEvents:WaitForChild("ShowMathQuiz")
+local CheckAnswer = ReplicatedStorage.RemoteEvents:WaitForChild("CheckAnswer")
+local OpenShop = ReplicatedStorage.RemoteEvents:WaitForChild("OpenShop")
+local BuyItem = ReplicatedStorage.RemoteEvents:WaitForChild("BuyItem")
+local LevelUp = ReplicatedStorage.RemoteEvents:WaitForChild("LevelUp")
+local UpgradeStat = ReplicatedStorage.RemoteEvents:WaitForChild("UpgradeStat")
+
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ตรวจสอบอุปกรณ์
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local isAdmin = false
+for _, adminName in ipairs(GameConfig.Admins) do
+	if player.Name == adminName then
+		isAdmin = true
+		break
+	end
+end
+
+print("📱 [MASTER CLIENT] อุปกรณ์:", isMobile and "มือถือ" or "คอมพิวเตอร์")
+if isAdmin then
+	print("👑 [MASTER CLIENT] ยืนยัน Admin:", player.Name)
+end
+
+-- ==========================================
+-- 🎨 สร้าง ScreenGui หลัก
+-- ==========================================
+local mainGui = Instance.new("ScreenGui")
+mainGui.Name = "MasterClientUI"
+mainGui.ResetOnSpawn = false
+mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+mainGui.Parent = playerGui
+
+-- ==========================================
+-- 📊 Stats Panel (HP, Stamina, Money)
+-- ==========================================
+local statsFrame = Instance.new("Frame")
+statsFrame.Name = "StatsPanel"
+statsFrame.Size = isMobile and UDim2.new(0, 240, 0, 140) or UDim2.new(0, 280, 0, 160)
+statsFrame.Position = UDim2.new(0, isMobile and 10 or 20, 0, isMobile and 10 or 20)
+statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+statsFrame.BackgroundTransparency = 0.3
+statsFrame.BorderSizePixel = 0
+statsFrame.Parent = mainGui
+
+local statsCorner = Instance.new("UICorner")
+statsCorner.CornerRadius = UDim.new(0, 15)
+statsCorner.Parent = statsFrame
+
+-- HP Bar
+local hpFrame = Instance.new("Frame")
+hpFrame.Size = UDim2.new(1, -20, 0, 30)
+hpFrame.Position = UDim2.new(0, 10, 0, 10)
+hpFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+hpFrame.BorderSizePixel = 0
+hpFrame.Parent = statsFrame
+
+local hpCorner = Instance.new("UICorner")
+hpCorner.CornerRadius = UDim.new(0, 8)
+hpCorner.Parent = hpFrame
+
+local hpBar = Instance.new("Frame")
+hpBar.Name = "HPBar"
+hpBar.Size = UDim2.new(1, 0, 1, 0)
+hpBar.BackgroundColor3 = GameConfig.Colors.HP
+hpBar.BorderSizePixel = 0
+hpBar.Parent = hpFrame
+
+local hpBarCorner = Instance.new("UICorner")
+hpBarCorner.CornerRadius = UDim.new(0, 8)
+hpBarCorner.Parent = hpBar
+
+local hpLabel = Instance.new("TextLabel")
+hpLabel.Size = UDim2.new(1, 0, 1, 0)
+hpLabel.BackgroundTransparency = 1
+hpLabel.Text = "❤️ HP: 100/100"
+hpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+hpLabel.TextSize = isMobile and 14 or 16
+hpLabel.Font = Enum.Font.GothamBold
+hpLabel.ZIndex = 2
+hpLabel.Parent = hpFrame
+
+-- Stamina Bar
+local staminaFrame = Instance.new("Frame")
+staminaFrame.Size = UDim2.new(1, -20, 0, 30)
+staminaFrame.Position = UDim2.new(0, 10, 0, 50)
+staminaFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+staminaFrame.BorderSizePixel = 0
+staminaFrame.Parent = statsFrame
+
+local staminaCorner = Instance.new("UICorner")
+staminaCorner.CornerRadius = UDim.new(0, 8)
+staminaCorner.Parent = staminaFrame
+
+local staminaBar = Instance.new("Frame")
+staminaBar.Name = "StaminaBar"
+staminaBar.Size = UDim2.new(1, 0, 1, 0)
+staminaBar.BackgroundColor3 = GameConfig.Colors.Stamina
+staminaBar.BorderSizePixel = 0
+staminaBar.Parent = staminaFrame
+
+local staminaBarCorner = Instance.new("UICorner")
+staminaBarCorner.CornerRadius = UDim.new(0, 8)
+staminaBarCorner.Parent = staminaBar
+
+local staminaLabel = Instance.new("TextLabel")
+staminaLabel.Size = UDim2.new(1, 0, 1, 0)
+staminaLabel.BackgroundTransparency = 1
+staminaLabel.Text = "⚡ Stamina: 100/100"
+staminaLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+staminaLabel.TextSize = isMobile and 14 or 16
+staminaLabel.Font = Enum.Font.GothamBold
+staminaLabel.ZIndex = 2
+staminaLabel.Parent = staminaFrame
+
+-- Money
+local moneyFrame = Instance.new("Frame")
+moneyFrame.Size = UDim2.new(1, -20, 0, 30)
+moneyFrame.Position = UDim2.new(0, 10, 0, 90)
+moneyFrame.BackgroundColor3 = GameConfig.Colors.Money
+moneyFrame.BorderSizePixel = 0
+moneyFrame.Parent = statsFrame
+
+local moneyCorner = Instance.new("UICorner")
+moneyCorner.CornerRadius = UDim.new(0, 8)
+moneyCorner.Parent = moneyFrame
+
+local moneyLabel = Instance.new("TextLabel")
+moneyLabel.Size = UDim2.new(1, 0, 1, 0)
+moneyLabel.BackgroundTransparency = 1
+moneyLabel.Text = "💰 Money: 0"
+moneyLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+moneyLabel.TextSize = isMobile and 16 or 18
+moneyLabel.Font = Enum.Font.GothamBold
+moneyLabel.Parent = moneyFrame
+
+-- ฟังก์ชันอัปเดต Stats
+UpdatePlayerStats.OnClientEvent:Connect(function(statType, value, maxValue)
+	if statType == "HP" then
+		hpLabel.Text = "❤️ HP: " .. math.floor(value) .. "/" .. maxValue
+		hpBar:TweenSize(UDim2.new(value/maxValue, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+	elseif statType == "Stamina" then
+		staminaLabel.Text = "⚡ Stamina: " .. math.floor(value) .. "/" .. maxValue
+		staminaBar:TweenSize(UDim2.new(value/maxValue, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+	elseif statType == "Money" then
+		moneyLabel.Text = "💰 Money: " .. value
+	end
+end)
+
+print("✅ [MASTER CLIENT] สร้าง Stats Panel")
+
+-- ==========================================
+-- 🎯 Crosshair + เป้ากลางจอ
+-- ==========================================
+local crosshair = Instance.new("Frame")
+crosshair.Name = "Crosshair"
+crosshair.Size = UDim2.new(0, 40, 0, 40)
+crosshair.Position = UDim2.new(0.5, -20, 0.5, -20)
+crosshair.BackgroundTransparency = 1
+crosshair.Parent = mainGui
+
+local centerDot = Instance.new("Frame")
+centerDot.Size = UDim2.new(0, 6, 0, 6)
+centerDot.Position = UDim2.new(0.5, -3, 0.5, -3)
+centerDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+centerDot.BorderSizePixel = 0
+centerDot.Parent = crosshair
+
+local dotCorner = Instance.new("UICorner")
+dotCorner.CornerRadius = UDim.new(1, 0)
+dotCorner.Parent = centerDot
+
+-- เส้นบน ล่าง ซ้าย ขวา
+local lines = {
+	{UDim2.new(0, 2, 0, 10), UDim2.new(0.5, -1, 0, 0)},
+	{UDim2.new(0, 2, 0, 10), UDim2.new(0.5, -1, 1, -10)},
+	{UDim2.new(0, 10, 0, 2), UDim2.new(0, 0, 0.5, -1)},
+	{UDim2.new(0, 10, 0, 2), UDim2.new(1, -10, 0.5, -1)},
+}
+
+for _, lineData in ipairs(lines) do
+	local line = Instance.new("Frame")
+	line.Size = lineData[1]
+	line.Position = lineData[2]
+	line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	line.BorderSizePixel = 0
+	line.Parent = crosshair
+end
+
+-- ป้ายชื่อของ
+local itemNameLabel = Instance.new("TextLabel")
+itemNameLabel.Size = UDim2.new(0, 200, 0, 40)
+itemNameLabel.Position = UDim2.new(0.5, -100, 0.5, -80)
+itemNameLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+itemNameLabel.BackgroundTransparency = 0.5
+itemNameLabel.Text = ""
+itemNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+itemNameLabel.TextSize = 18
+itemNameLabel.Font = Enum.Font.GothamBold
+itemNameLabel.Visible = false
+itemNameLabel.Parent = mainGui
+
+local labelCorner = Instance.new("UICorner")
+labelCorner.CornerRadius = UDim.new(0, 10)
+labelCorner.Parent = itemNameLabel
+
+-- ระบบชี้ของ
+local currentTargetItem = nil
+local isCollecting = false
+
+local function updateCrosshair()
+	if isCollecting then return end
+	
+	local camera = workspace.CurrentCamera
+	local rayOrigin = camera.CFrame.Position
+	local rayDirection = camera.CFrame.LookVector * 100
+	
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.FilterDescendantsInstances = {player.Character}
+	
+	local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+	
+	if raycastResult then
+		local hitPart = raycastResult.Instance
+		
+		if hitPart and hitPart.Name == "DroppedItem" then
+			currentTargetItem = hitPart
+			
+			centerDot.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+			for _, line in ipairs(crosshair:GetChildren()) do
+				if line:IsA("Frame") and line ~= centerDot then
+					line.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+				end
+			end
+			
+			itemNameLabel.Text = "📦 ของลึกลับ"
+			itemNameLabel.Visible = true
+			return
+		end
+	end
+	
+	currentTargetItem = nil
+	centerDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	for _, line in ipairs(crosshair:GetChildren()) do
+		if line:IsA("Frame") and line ~= centerDot then
+			line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		end
+	end
+	itemNameLabel.Visible = false
+end
+
+spawn(function()
+	while true do
+		updateCrosshair()
+		wait(0.1)
+	end
+end)
+
+print("✅ [MASTER CLIENT] สร้าง Crosshair")
+
+-- ==========================================
+-- 📝 Math Quiz UI (มี Timer)
+-- ==========================================
+local quizPanel = Instance.new("Frame")
+quizPanel.Size = isMobile and UDim2.new(0.95, 0, 0, 400) or UDim2.new(0, 600, 0, 450)
+quizPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
+quizPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+quizPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+quizPanel.BorderSizePixel = 5
+quizPanel.BorderColor3 = GameConfig.Colors.Accent
+quizPanel.Visible = false
+quizPanel.ZIndex = 10
+quizPanel.Parent = mainGui
+
+local quizCorner = Instance.new("UICorner")
+quizCorner.CornerRadius = UDim.new(0, 20)
+quizCorner.Parent = quizPanel
+
+-- Header
+local quizHeader = Instance.new("TextLabel")
+quizHeader.Size = UDim2.new(1, 0, 0, 70)
+quizHeader.BackgroundColor3 = GameConfig.Colors.Accent
+quizHeader.Text = "📝 โจทย์คณิตศาสตร์"
+quizHeader.TextSize = isMobile and 28 or 32
+quizHeader.Font = Enum.Font.GothamBold
+quizHeader.TextColor3 = Color3.fromRGB(0, 0, 0)
+quizHeader.ZIndex = 11
+quizHeader.Parent = quizPanel
+
+local quizHeaderCorner = Instance.new("UICorner")
+quizHeaderCorner.CornerRadius = UDim.new(0, 20)
+quizHeaderCorner.Parent = quizHeader
+
+-- Timer
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(0, 80, 0, 80)
+timerLabel.Position = UDim2.new(1, -90, 0, 80)
+timerLabel.BackgroundColor3 = GameConfig.Colors.Danger
+timerLabel.Text = "30"
+timerLabel.TextSize = 40
+timerLabel.Font = Enum.Font.GothamBold
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.ZIndex = 11
+timerLabel.Parent = quizPanel
+
+local timerCorner = Instance.new("UICorner")
+timerCorner.CornerRadius = UDim.new(1, 0)
+timerCorner.Parent = timerLabel
+
+-- Question
+local questionLabel = Instance.new("TextLabel")
+questionLabel.Size = isMobile and UDim2.new(1, -110, 0, 80) or UDim2.new(1, -130, 0, 90)
+questionLabel.Position = UDim2.new(0, 15, 0, 90)
+questionLabel.BackgroundTransparency = 1
+questionLabel.Text = "10 + 5 = ?"
+questionLabel.TextSize = isMobile and 40 or 50
+questionLabel.Font = Enum.Font.GothamBold
+questionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+questionLabel.ZIndex = 11
+questionLabel.Parent = quizPanel
+
+-- Answer Box
+local answerBox = Instance.new("TextBox")
+answerBox.Size = UDim2.new(1, -30, 0, 70)
+answerBox.Position = UDim2.new(0, 15, 0, 200)
+answerBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+answerBox.PlaceholderText = "พิมพ์คำตอบ..."
+answerBox.Text = ""
+answerBox.TextSize = isMobile and 32 or 38
+answerBox.Font = Enum.Font.Gotham
+answerBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+answerBox.ClearTextOnFocus = false
+answerBox.ZIndex = 11
+answerBox.Parent = quizPanel
+
+local answerCorner = Instance.new("UICorner")
+answerCorner.CornerRadius = UDim.new(0, 15)
+answerCorner.Parent = answerBox
+
+-- Submit Button
+local submitButton = Instance.new("TextButton")
+submitButton.Size = UDim2.new(1, -30, 0, 65)
+submitButton.Position = UDim2.new(0, 15, 0, 290)
+submitButton.BackgroundColor3 = GameConfig.Colors.Success
+submitButton.Text = "✓ ส่งคำตอบ"
+submitButton.TextSize = isMobile and 26 or 30
+submitButton.Font = Enum.Font.GothamBold
+submitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitButton.ZIndex = 11
+submitButton.Parent = quizPanel
+
+local submitCorner = Instance.new("UICorner")
+submitCorner.CornerRadius = UDim.new(0, 15)
+submitCorner.Parent = submitButton
+
+-- Cancel Button
+local cancelButton = Instance.new("TextButton")
+cancelButton.Size = UDim2.new(1, -30, 0, 50)
+cancelButton.Position = UDim2.new(0, 15, 1, -65)
+cancelButton.BackgroundColor3 = GameConfig.Colors.Danger
+cancelButton.Text = "❌ ยกเลิก (ของจะหายไป)"
+cancelButton.TextSize = isMobile and 16 or 18
+cancelButton.Font = Enum.Font.GothamBold
+cancelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+cancelButton.ZIndex = 11
+cancelButton.Parent = quizPanel
+
+local cancelCorner = Instance.new("UICorner")
+cancelCorner.CornerRadius = UDim.new(0, 10)
+cancelCorner.Parent = cancelButton
+
+local isQuizActive = false
+local currentItemRef = nil
+local quizStartTime = 0
+local timerThread = nil
+
+local function startTimer(seconds)
+	if timerThread then
+		task.cancel(timerThread)
+	end
+	
+	timerThread = task.spawn(function()
+		local remaining = seconds
+		
+		while remaining > 0 and isQuizActive do
+			timerLabel.Text = tostring(remaining)
+			
+			if remaining <= 5 then
+				timerLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+			elseif remaining <= 10 then
+				timerLabel.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+			else
+				timerLabel.BackgroundColor3 = GameConfig.Colors.Stamina
+			end
+			
+			task.wait(1)
+			remaining = remaining - 1
+		end
+		
+		if remaining <= 0 and isQuizActive then
+			questionLabel.Text = "⏰ หมดเวลา!"
+			questionLabel.TextColor3 = GameConfig.Colors.Danger
+			
+			task.wait(1)
+			pcall(function()
+				CheckAnswer:InvokeServer("TIMEOUT", currentItemRef, seconds + 1)
+			end)
+			
+			task.wait(1.5)
+			isQuizActive = false
+			quizPanel.Visible = false
+			answerBox.Text = ""
+		end
+	end)
+end
+
+ShowMathQuiz.OnClientEvent:Connect(function(question, itemRef)
+	if isQuizActive then return end
+	
+	isQuizActive = true
+	currentItemRef = itemRef
+	quizStartTime = tick()
+	
+	questionLabel.Text = question
+	questionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	answerBox.Text = ""
+	
+	quizPanel.Visible = true
+	answerBox:CaptureFocus()
+	
+	startTimer(GameConfig.Quiz.EasyTime)
+	print("📝 [MASTER CLIENT] แสดงโจทย์")
+end)
+
+local function submitAnswer()
+	if not isQuizActive then return end
+	
+	local answer = answerBox.Text
+	if answer == "" then return end
+	
+	if timerThread then
+		task.cancel(timerThread)
+	end
+	
+	submitButton.Active = false
+	submitButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	
+	local timeTaken = tick() - quizStartTime
+	local success, isCorrect = pcall(function()
+		return CheckAnswer:InvokeServer(answer, currentItemRef, timeTaken)
+	end)
+	
+	if success then
+		if isCorrect then
+			questionLabel.Text = "✅ ถูกต้อง!"
+			questionLabel.TextColor3 = GameConfig.Colors.Success
+		else
+			questionLabel.Text = "❌ ผิด!"
+			questionLabel.TextColor3 = GameConfig.Colors.Danger
+		end
+		
+		task.wait(2)
+		isQuizActive = false
+		quizPanel.Visible = false
+		answerBox.Text = ""
+		submitButton.Active = true
+		submitButton.BackgroundColor3 = GameConfig.Colors.Success
+	end
+end
+
+submitButton.MouseButton1Click:Connect(submitAnswer)
+
+cancelButton.MouseButton1Click:Connect(function()
+	if not isQuizActive then return end
+	
+	if timerThread then
+		task.cancel(timerThread)
+	end
+	
+	pcall(function()
+		CheckAnswer:InvokeServer("CANCEL", currentItemRef, 0)
+	end)
+	
+	isQuizActive = false
+	quizPanel.Visible = false
+	answerBox.Text = ""
+end)
+
+answerBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed and answerBox.Text ~= "" and isQuizActive then
+		submitAnswer()
+	end
+end)
+
+print("✅ [MASTER CLIENT] สร้าง Quiz UI")
+
+-- ==========================================
+-- 📱 ปุ่มมือถือ (โจมตี + เก็บของ)
+-- ==========================================
+local mobileControls = Instance.new("Frame")
+mobileControls.Size = UDim2.new(0, 200, 0, 100)
+mobileControls.Position = UDim2.new(1, -210, 1, -110)
+mobileControls.BackgroundTransparency = 1
+mobileControls.Parent = mainGui
+
+-- ปุ่มโจมตี
+local attackButton = Instance.new("TextButton")
+attackButton.Size = UDim2.new(0, 90, 0, 90)
+attackButton.Position = UDim2.new(0, 0, 0, 0)
+attackButton.BackgroundColor3 = GameConfig.Colors.Danger
+attackButton.Text = "⚔️"
+attackButton.TextSize = 40
+attackButton.Font = Enum.Font.GothamBold
+attackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+attackButton.Parent = mobileControls
+
+local attackCorner = Instance.new("UICorner")
+attackCorner.CornerRadius = UDim.new(1, 0)
+attackCorner.Parent = attackButton
+
+local lastAttackTime = 0
+
+attackButton.MouseButton1Down:Connect(function()
+	local currentTime = tick()
+	if currentTime - lastAttackTime < 0.5 then return end
+	
+	lastAttackTime = currentTime
+	attackButton.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+	AttackMonster:FireServer()
+	
+	wait(0.1)
+	attackButton.BackgroundColor3 = GameConfig.Colors.Danger
+end)
+
+-- ปุ่มเก็บของ
+local collectButton = Instance.new("TextButton")
+collectButton.Size = UDim2.new(0, 90, 0, 90)
+collectButton.Position = UDim2.new(1, -90, 0, 0)
+collectButton.BackgroundColor3 = GameConfig.Colors.Money
+collectButton.Text = "📦"
+collectButton.TextSize = 40
+collectButton.Font = Enum.Font.GothamBold
+collectButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+collectButton.Parent = mobileControls
+
+local collectCorner = Instance.new("UICorner")
+collectCorner.CornerRadius = UDim.new(1, 0)
+collectCorner.Parent = collectButton
+
+collectButton.MouseButton1Down:Connect(function()
+	if isCollecting or not currentTargetItem then return end
+	
+	isCollecting = true
+	collectButton.BackgroundColor3 = Color3.fromRGB(200, 150, 0)
+	
+	local success, result, message = pcall(function()
+		return CollectItem:InvokeServer(currentTargetItem)
+	end)
+	
+	if success then
+		print("📦 [MASTER CLIENT]", result and "เก็บสำเร็จ" or "เก็บไม่ได้:", message)
+	end
+	
+	currentTargetItem = nil
+	wait(0.5)
+	isCollecting = false
+	collectButton.BackgroundColor3 = GameConfig.Colors.Money
+end)
+
+-- รองรับ PC (กด E)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	
+	if input.KeyCode == Enum.KeyCode.E then
+		collectButton.MouseButton1Down:Fire()
+	end
+end)
+
+print("✅ [MASTER CLIENT] สร้างปุ่มมือถือ")
+
+-- ==========================================
+-- 👑 Admin Panel (ถ้าเป็น Admin)
+-- ==========================================
+if isAdmin then
+	local adminToggle = Instance.new("TextButton")
+	adminToggle.Size = UDim2.new(0, 70, 0, 70)
+	adminToggle.Position = UDim2.new(1, -90, 0, 20)
+	adminToggle.BackgroundColor3 = GameConfig.Colors.Primary
+	adminToggle.Text = "👑"
+	adminToggle.TextSize = 36
+	adminToggle.Font = Enum.Font.GothamBold
+	adminToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	adminToggle.BorderSizePixel = 3
+	adminToggle.BorderColor3 = GameConfig.Colors.Accent
+	adminToggle.Parent = mainGui
+	
+	local adminCorner = Instance.new("UICorner")
+	adminCorner.CornerRadius = UDim.new(1, 0)
+	adminCorner.Parent = adminToggle
+	
+	local adminPanel = Instance.new("Frame")
+	adminPanel.Size = isMobile and UDim2.new(0.9, 0, 0, 450) or UDim2.new(0, 600, 0, 500)
+	adminPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	adminPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+	adminPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	adminPanel.BorderSizePixel = 0
+	adminPanel.Visible = false
+	adminPanel.ZIndex = 100
+	adminPanel.Parent = mainGui
+	
+	local adminPanelCorner = Instance.new("UICorner")
+	adminPanelCorner.CornerRadius = UDim.new(0, 15)
+	adminPanelCorner.Parent = adminPanel
+	
+	local adminHeader = Instance.new("Frame")
+	adminHeader.Size = UDim2.new(1, 0, 0, 60)
+	adminHeader.BackgroundColor3 = GameConfig.Colors.Primary
+	adminHeader.BorderSizePixel = 0
+	adminHeader.ZIndex = 101
+	adminHeader.Parent = adminPanel
+	
+	local adminHeaderCorner = Instance.new("UICorner")
+	adminHeaderCorner.CornerRadius = UDim.new(0, 15)
+	adminHeaderCorner.Parent = adminHeader
+	
+	local adminTitle = Instance.new("TextLabel")
+	adminTitle.Size = UDim
+my: เอาใหม่คือไม่มีวิธีทำให้โค้ดมันไม่เกะกะหน้าจอเลยหรอฉันจำได้ว่าปกตินายทำได้นะให้โค้ชมันไม่เกะกะหน้าจอขนาดนี้
+ai: 😅 เข้าใจแล้วครับ! ใช้ Artifacts สิครับ!
+แทนที่จะส่งโค้ดยาวๆ ในข้อความ ผมจะใส่ในกล่อง Artifact แยกออกมา จะได้ไม่รกหน้าจอ!
+
+📁 ไฟล์ทั้งหมดที่ต้องมี (ใหม่หมด)
+1️⃣ GameConfig
+2️⃣ MasterServer (700+ บรรทัด)
+3️⃣ MasterClient (800+ บรรทัด)
+4️⃣ MonsterAI
+5️⃣ CreateTestContent
+
+มาเริ่มกันเลยครับ! 👇Claude is AI and can make mistakes. Please double-check responses.
